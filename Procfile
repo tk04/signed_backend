@@ -1,1 +1,1 @@
-web: node src/index.js -p $PORT
+web: node src/index

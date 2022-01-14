@@ -2,7 +2,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const app = express();
 require("./db/connect");
-const PORT = 4000 || process.env.PORT;
+const PORT = process.env.PORT || 4000;
 console.log("PORT: " + PORT);
 const userRoutes = require("./routes/user");
 app.use(express.json());

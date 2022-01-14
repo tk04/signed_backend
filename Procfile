@@ -1,1 +1,1 @@
-web: node src/index
+web: PORT=$PORT node src/index

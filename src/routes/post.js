@@ -18,7 +18,21 @@ const storage = multer.diskStorage({
     );
   },
 });
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (
+      file.mimetype == "image/png" ||
+      file.mimetype == "image/jpg" ||
+      file.mimetype == "image/jpeg"
+    ) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+      return cb(new Error("Only .png, .jpg and .jpeg images allowed!"));
+    }
+  },
+});
 
 router.post("/api1/posts", auth, async (req, res) => {
   const post = new Post({
@@ -39,33 +53,45 @@ router.post(
   upload.array("images", 4),
   async (req, res) => {
     const post = await Post.findOne({ _id: req.params.id });
+    const userFolder = path.join(__dirname, `../../uploads/${post.owner}`);
+    if (!fs.existsSync(userFolder)) {
+      fs.mkdirSync(userFolder);
+    }
     let imgArr = [];
     for (const file of req.files) {
-      imgArr.push(`${file.filename.split(".")[0]}.png`);
-      await sharp(file.path)
-        .metadata()
-        .then(({ width, height }) =>
-          sharp(file.path)
-            .rotate()
-            .resize(parseInt(width * 0.8), parseInt(height * 0.8), {
-              fit: sharp.fit.outside,
-            })
-            // .withMetadata()
-            .toFile(
-              path.resolve(
-                file.destination,
-                "resized",
-                file.filename.split(".")[0] + ".png"
+      imgArr.push(
+        `${req.protocol}://${req.headers.host}/uploads/${post.owner}/${
+          file.filename.split(".")[0]
+        }.png`
+      );
+      try {
+        await sharp(file.path)
+          .metadata()
+          .then(({ width, height }) =>
+            sharp(file.path)
+              .rotate()
+              .resize(parseInt(width * 0.8), parseInt(height * 0.8), {
+                fit: sharp.fit.outside,
+              })
+              .withMetadata()
+              .toFile(
+                path.resolve(
+                  file.destination,
+                  post.owner,
+                  file.filename.split(".")[0] + ".png"
+                )
               )
-            )
+          );
+      } catch (e) {
+        fs.unlinkSync(
+          `uploads/${post.owner}/${file.filename.split(".")[0]}.png`
         );
-
-      fs.unlinkSync(file.path);
+        fs.unlinkSync(file.path);
+        return res.status(500).send({ err: e.message });
+      }
     }
     post.images = imgArr;
-    // console.log(req.files);
-    // post.images = imgArr;
-    // await post.save();
+
     await post.save();
     res.send({ images: post.images });
   }

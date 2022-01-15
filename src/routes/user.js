@@ -53,19 +53,19 @@ router.get("/api1/users/:username", async (req, res) => {
     const token = req.headers.authorization
       ? req.headers.authorization.replace("Bearer ", "")
       : null;
-
     const uid = req.params.username;
     const user = await User.findOne({ username: uid });
     if (!user) {
       return res.status(404).send({ error: "User not found" });
     }
-    if (token) {
+    try {
       const decoded = jwt.verify(token, "testing123123_fzxasszxc");
       if (decoded._id === user._id.toString()) {
         return res.send({ isUser: true });
       }
+    } catch (_e) {
+      res.send({ user });
     }
-    res.send({ user });
   } catch (e) {
     res.send({ error: e.message });
   }
@@ -131,4 +131,5 @@ router.get("/api1/users/:username/avatar", async (req, res) => {
   res.set("Content-Type", "image/png"); // set response headers
   res.send({ avatar: user.avatar });
 });
+
 module.exports = router;

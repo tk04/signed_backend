@@ -105,7 +105,7 @@ const userSchema = new mongoose.Schema(
 userSchema.virtual("posts", {
   // not stored on databse, just for mongoose to be able to identify relationships between models
   ref: "Post", // reference to Task model
-  localField: "_id", // where the local data is stored, data stored to establish the relationship (user id)
+  localField: "username", // where the local data is stored, data stored to establish the relationship (user id)
   foreignField: "owner", // name of field in Task model that creates relationship
 });
 

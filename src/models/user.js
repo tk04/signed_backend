@@ -46,20 +46,12 @@ const userSchema = new mongoose.Schema(
         }
       },
     },
-    followers: [
-      {
-        follower: {
-          type: String,
-        },
-      },
-    ],
-    following: [
-      {
-        follow: {
-          type: String,
-        },
-      },
-    ],
+    followers: {
+      type: [String],
+    },
+    following: {
+      type: [String],
+    },
     accomplishments: {
       type: [String],
     },

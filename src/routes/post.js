@@ -97,7 +97,7 @@ router.post(
   }
 );
 
-router.get("/api/posts/:id", auth, async (req, res) => {
+router.get("/api/post/:id", auth, async (req, res) => {
   const post = await Post.findOne({ _id: req.params.id });
   if (!post) {
     return res.status(404).send();
@@ -109,9 +109,41 @@ router.get("/api1/posts/:uid", async (req, res) => {
   try {
     const posts = await Post.find({ owner: req.params.uid });
     if (!posts) {
-      throw new Error("user not found");
+      throw new Error("post not found");
     }
     res.send(posts);
+  } catch (e) {
+    res.status(404).send();
+  }
+});
+router.post("/api1/posts/:postId/like", auth, async (req, res) => {
+  try {
+    const post = await Post.findOne({ _id: req.params.postId });
+    if (!post) {
+      throw new Error("post not found");
+    }
+    const likesSet = new Set(post.likes);
+    if (likesSet.has(req.user.username)) {
+      likesSet.delete(req.user.username);
+    } else {
+      likesSet.add(req.user.username);
+    }
+    post.likes = Array.from(likesSet);
+    await post.save();
+    res.send(post);
+  } catch (e) {
+    res.status(404).send({ e: e.message });
+  }
+});
+router.post("/api1/posts/:postId/unlike", auth, async (req, res) => {
+  try {
+    const post = await Post.find({ _id: req.params.postId });
+    if (!post) {
+      throw new Error("post not found");
+    }
+    post.likes.splice(req.user.username, 1);
+    await post.save();
+    res.send(post);
   } catch (e) {
     res.status(404).send();
   }

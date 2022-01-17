@@ -129,7 +129,6 @@ userSchema.methods.toJSON = function () {
   delete userObject.password;
   delete userObject.createdAt;
   delete userObject.updatedAt;
-  delete userObject.avatar;
 
   return userObject;
 };

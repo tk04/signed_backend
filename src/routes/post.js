@@ -82,11 +82,15 @@ router.post(
                 )
               )
           );
+        fs.unlinkSync(path.join(__dirname, `../../${file.path}`));
       } catch (e) {
         fs.unlinkSync(
-          `uploads/${post.owner}/${file.filename.split(".")[0]}.png`
+          path.join(
+            __dirname,
+            `../../uploads/${post.owner}/${file.filename.split(".")[0]}.png`
+          )
         );
-        fs.unlinkSync(file.path);
+        fs.unlinkSync(path.join(__dirname, `../../${file.path}`));
         return res.status(500).send({ err: e.message });
       }
     }
@@ -135,18 +139,26 @@ router.post("/api1/posts/:postId/like", auth, async (req, res) => {
     res.status(404).send({ e: e.message });
   }
 });
-router.post("/api1/posts/:postId/unlike", auth, async (req, res) => {
+
+router.delete("/api1/post/:postId", auth, async (req, res) => {
   try {
-    const post = await Post.find({ _id: req.params.postId });
-    if (!post) {
-      throw new Error("post not found");
+    const post = await Post.findOneAndDelete({
+      _id: req.params.postId,
+      owner: req.user.username,
+    });
+    if (post.images.length > 0) {
+      for (const image of post.images) {
+        const imgLoc = image.split("/uploads");
+        const delLoc = path.join(__dirname, `../../uploads${imgLoc[1]}`);
+        fs.unlinkSync(delLoc);
+      }
     }
-    post.likes.splice(req.user.username, 1);
-    await post.save();
-    res.send(post);
+    if (!post) {
+      throw new Error();
+    }
+    res.send();
   } catch (e) {
     res.status(404).send();
   }
 });
-
 module.exports = router;

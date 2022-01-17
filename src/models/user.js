@@ -117,7 +117,7 @@ userSchema.statics.Login = async (email, password) => {
 userSchema.methods.generateAuthToken = function () {
   const user = this;
   const token = jwt.sign(
-    { _id: user._id.toString() },
+    { username: user.username },
     "testing123123_fzxasszxc"
   );
   return token;

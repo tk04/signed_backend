@@ -61,14 +61,10 @@ router.get("/api1/users/:username", async (req, res) => {
     if (token) {
       try {
         const decoded = jwt.verify(token, "testing123123_fzxasszxc");
-        if (decoded._id === user._id.toString()) {
+        if (decoded.username === user.username) {
           return res.send({ isUser: true });
         } else {
-          const orgUser = await User.findOne({ _id: decoded._id });
-          if (!orgUser) {
-            throw new Error("");
-          }
-          if (orgUser.following.includes(req.params.username)) {
+          if (user.followers.includes(decoded.username)) {
             res.send({ user, isFollowing: true });
           } else {
             res.send({ user, isFollowing: false });
@@ -149,18 +145,26 @@ router.get("/api1/users/:username/avatar", async (req, res) => {
 router.post("/api1/users/:username/follow", auth, async (req, res) => {
   try {
     const followSet = new Set(req.user.following);
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) {
+      throw new Error("user not found");
+    }
+    const followUserSet = new Set(user.followers);
+
     if (followSet.has(req.params.username)) {
       followSet.delete(req.params.username);
+      followUserSet.delete(req.user.username);
       req.user.following = Array.from(followSet);
+      user.followers = Array.from(followUserSet);
       await req.user.save();
+      await user.save();
       return res.send({ msg: "deleted follow" });
     } else {
-      const user = await User.findOne({ username: req.params.username });
-      if (!user) {
-        throw new Error("user not found");
-      }
       followSet.add(req.params.username);
+      followUserSet.add(req.user.username);
       req.user.following = Array.from(followSet);
+      user.followers = Array.from(followUserSet);
+      await user.save();
       await req.user.save();
       res.send({ msg: "added follow" });
     }

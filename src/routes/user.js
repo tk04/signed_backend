@@ -50,6 +50,7 @@ router.get("/api1/users/me", auth, async (req, res) => {
 
 router.get("/api1/users/:username", async (req, res) => {
   try {
+    console.log(req.query);
     const token = req.headers.authorization
       ? req.headers.authorization.replace("Bearer ", "")
       : null;

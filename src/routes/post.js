@@ -6,6 +6,7 @@ const multer = require("multer");
 const router = express.Router();
 const path = require("path");
 const fs = require("fs");
+var mongoose = require("mongoose");
 
 const storage = multer.diskStorage({
   destination(req, file, cb) {
@@ -37,7 +38,7 @@ const upload = multer({
 router.post("/api1/posts", auth, async (req, res) => {
   const post = new Post({
     ...req.body,
-    owner: req.user.username,
+    owner: mongoose.Types.ObjectId(req.user._id),
   });
   try {
     await post.save();
@@ -52,15 +53,21 @@ router.post(
   "/api1/posts/:id/images",
   upload.array("images", 4),
   async (req, res) => {
-    const post = await Post.findOne({ _id: req.params.id });
-    const userFolder = path.join(__dirname, `../../uploads/${post.owner}`);
+    const post = await Post.findOne({ _id: req.params.id }).populate(
+      "owner",
+      "username"
+    );
+    const userFolder = path.join(
+      __dirname,
+      `../../uploads/${post.owner.username}`
+    );
     if (!fs.existsSync(userFolder)) {
       fs.mkdirSync(userFolder);
     }
     let imgArr = [];
     for (const file of req.files) {
       imgArr.push(
-        `${req.protocol}://${req.headers.host}/uploads/${post.owner}/${
+        `${req.protocol}://${req.headers.host}/uploads/${post.owner.username}/${
           file.filename.split(".")[0]
         }.png`
       );
@@ -77,7 +84,7 @@ router.post(
               .toFile(
                 path.resolve(
                   file.destination,
-                  post.owner,
+                  post.owner.username,
                   file.filename.split(".")[0] + ".png"
                 )
               )
@@ -87,7 +94,9 @@ router.post(
         fs.unlinkSync(
           path.join(
             __dirname,
-            `../../uploads/${post.owner}/${file.filename.split(".")[0]}.png`
+            `../../uploads/${post.owner.username}/${
+              file.filename.split(".")[0]
+            }.png`
           )
         );
         fs.unlinkSync(path.join(__dirname, `../../${file.path}`));
@@ -111,7 +120,9 @@ router.get("/api/post/:id", auth, async (req, res) => {
 
 router.get("/api1/posts/:uid", async (req, res) => {
   try {
-    const posts = await Post.find({ owner: req.params.uid });
+    const posts = await Post.find({
+      owner: mongoose.Types.ObjectId(req.params.uid),
+    });
     if (!posts) {
       throw new Error("post not found");
     }
@@ -144,7 +155,7 @@ router.delete("/api1/post/:postId", auth, async (req, res) => {
   try {
     const post = await Post.findOneAndDelete({
       _id: req.params.postId,
-      owner: req.user.username,
+      owner: mongoose.Types.ObjectId(req.user._id),
     });
     if (post.images.length > 0) {
       for (const image of post.images) {
@@ -160,5 +171,15 @@ router.delete("/api1/post/:postId", auth, async (req, res) => {
   } catch (e) {
     res.status(404).send();
   }
+});
+router.get("/api1/feed", auth, async (req, res) => {
+  const posts = await Post.find({
+    owner: {
+      $in: [mongoose.Types.ObjectId(req.user._id)],
+    },
+  }).populate("owner", "name username avatar");
+  // const uP = await posts.populate("User");
+  // console.log(uP);
+  res.send({ posts });
 });
 module.exports = router;

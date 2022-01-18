@@ -47,10 +47,10 @@ const userSchema = new mongoose.Schema(
       },
     },
     followers: {
-      type: [String],
+      type: [mongoose.SchemaTypes.ObjectId],
     },
     following: {
-      type: [String],
+      type: [mongoose.SchemaTypes.ObjectId],
     },
     accomplishments: {
       type: [String],
@@ -116,10 +116,7 @@ userSchema.statics.Login = async (email, password) => {
 
 userSchema.methods.generateAuthToken = function () {
   const user = this;
-  const token = jwt.sign(
-    { username: user.username },
-    "testing123123_fzxasszxc"
-  );
+  const token = jwt.sign({ id: user._id }, "testing123123_fzxasszxc");
   return token;
 };
 userSchema.methods.toJSON = function () {

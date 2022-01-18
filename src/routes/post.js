@@ -120,9 +120,12 @@ router.get("/api/post/:id", auth, async (req, res) => {
 
 router.get("/api1/posts/:uid", async (req, res) => {
   try {
+    const skip = parseInt(req.query.skip);
     const posts = await Post.find({
       owner: mongoose.Types.ObjectId(req.params.uid),
-    });
+    })
+      .limit(3)
+      .skip(skip);
     if (!posts) {
       throw new Error("post not found");
     }
@@ -173,13 +176,16 @@ router.delete("/api1/post/:postId", auth, async (req, res) => {
   }
 });
 router.get("/api1/feed", auth, async (req, res) => {
+  const skip = parseInt(req.query.skip);
   const posts = await Post.find({
     owner: {
       $in: [mongoose.Types.ObjectId(req.user._id)],
     },
-  }).populate("owner", "name username avatar");
-  // const uP = await posts.populate("User");
-  // console.log(uP);
+  })
+    .populate("owner", "name username avatar")
+    .limit(3)
+    .skip(skip);
+
   res.send({ posts });
 });
 module.exports = router;

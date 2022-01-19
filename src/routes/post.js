@@ -110,12 +110,58 @@ router.post(
   }
 );
 
-router.get("/api/post/:id", auth, async (req, res) => {
-  const post = await Post.findOne({ _id: req.params.id });
-  if (!post) {
-    return res.status(404).send();
+router.get("/api1/post/:id", async (req, res) => {
+  try {
+    // const skip = req.query.skip || 0;
+    const post = await Post.findOne({
+      _id: mongoose.Types.ObjectId(req.params.id),
+    });
+    // .populate({
+    //   path: "comments",
+    //   populate: {
+    //     path: "owner",
+    //     model: "User",
+    //     select: "username name avatar",
+    //   },
+    //   options: {
+    //     limit: 3,
+    //     skip: skip,
+    //   },
+    // });
+    if (!post) {
+      throw new Error();
+    }
+    res.send(post);
+  } catch (e) {
+    res.status(404).send({ e: e.message });
   }
-  res.send(post);
+});
+router.get("/api1/post/:id/comments", async (req, res) => {
+  try {
+    const skip = parseInt(req.query.skip);
+    const post = await Post.findOne({
+      _id: mongoose.Types.ObjectId(req.params.id),
+    }).populate({
+      path: "comments",
+      populate: {
+        path: "owner",
+        model: "User",
+        select: "username name avatar",
+      },
+      options: {
+        limit: 3,
+        skip,
+      },
+    });
+
+    if (!post) {
+      throw new Error();
+    }
+
+    res.send(post.comments);
+  } catch (e) {
+    res.status(404).send({ e: e.message });
+  }
 });
 
 router.get("/api1/posts/:uid", async (req, res) => {
@@ -123,7 +169,9 @@ router.get("/api1/posts/:uid", async (req, res) => {
     const skip = parseInt(req.query.skip);
     const posts = await Post.find({
       owner: mongoose.Types.ObjectId(req.params.uid),
+      commentTo: undefined,
     })
+      .sort({ createdAt: -1 })
       .limit(3)
       .skip(skip);
     if (!posts) {
@@ -179,13 +227,32 @@ router.get("/api1/feed", auth, async (req, res) => {
   const skip = parseInt(req.query.skip);
   const posts = await Post.find({
     owner: {
-      $in: [mongoose.Types.ObjectId(req.user._id)],
+      $in: req.user.following,
     },
   })
-    .populate("owner", "name username avatar")
+    .sort({ createdAt: -1 })
     .limit(3)
     .skip(skip);
 
   res.send({ posts });
+});
+
+router.post("/api1/comment/:pid", auth, async (req, res) => {
+  try {
+    const pid = mongoose.Types.ObjectId(req.params.pid);
+    const post = new Post({
+      ...req.body,
+      commentTo: pid,
+      owner: mongoose.Types.ObjectId(req.user._id),
+    });
+    await post.save();
+    const orgPost = await Post.findOne({ _id: pid });
+    orgPost.comments.push(mongoose.Types.ObjectId(post._id));
+
+    await orgPost.save();
+    res.status(201).send(post);
+  } catch (e) {
+    res.status(400).send({ e: e.message });
+  }
 });
 module.exports = router;

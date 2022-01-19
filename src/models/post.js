@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 
+const optionsFunction = () => {
+  return { select: "username name avatar" };
+};
 const postSchema = new mongoose.Schema(
   {
     text: {
@@ -13,16 +16,27 @@ const postSchema = new mongoose.Schema(
       type: mongoose.SchemaTypes.ObjectId,
       required: true,
       ref: "User",
+      autopopulate: optionsFunction,
     },
     images: {
       type: [String],
       maxlength: 4,
+    },
+    comments: {
+      type: [mongoose.SchemaTypes.ObjectId],
+      ref: "Post",
+    },
+    commentTo: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "Post",
+      autopopulate: true,
     },
   },
   {
     timestamps: true,
   }
 );
+postSchema.plugin(require("mongoose-autopopulate"));
 
 const Post = mongoose.model("Post", postSchema);
 

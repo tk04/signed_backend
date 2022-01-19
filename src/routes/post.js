@@ -7,6 +7,7 @@ const router = express.Router();
 const path = require("path");
 const fs = require("fs");
 var mongoose = require("mongoose");
+const { $where } = require("../models/post");
 
 const storage = multer.diskStorage({
   destination(req, file, cb) {
@@ -235,6 +236,16 @@ router.get("/api1/feed", auth, async (req, res) => {
     .skip(skip);
 
   res.send({ posts });
+});
+router.get("/api1/popular", async (req, res) => {
+  try {
+    const skip = parseInt(req.query.skip);
+    const posts = await Post.find().sort({ likes: -1 }).limit(3).skip(skip);
+
+    res.send(posts);
+  } catch (e) {
+    res.status(400).send({ e: e.message });
+  }
 });
 
 router.post("/api1/comment/:pid", auth, async (req, res) => {

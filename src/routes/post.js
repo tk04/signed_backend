@@ -240,8 +240,57 @@ router.get("/api1/feed", auth, async (req, res) => {
 router.get("/api1/popular", async (req, res) => {
   try {
     const skip = parseInt(req.query.skip);
-    const posts = await Post.find().sort({ likes: -1 }).limit(3).skip(skip);
-
+    console.log(skip);
+    const posts = await Post.find({})
+      .sort({ likes: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(3);
+    // const agg = Post.aggregate(
+    //   [
+    //     {
+    //       $set: {
+    //         numLikes: {
+    //           $size: "$likes",
+    //         },
+    //         numComments: {
+    //           $size: "$comments",
+    //         },
+    //       },
+    //     },
+    //     {
+    //       $sort: {
+    //         numLikes: -1,
+    //         numComments: -1,
+    //       },
+    //     },
+    //     { $skip: skip },
+    //     { $limit: 3 },
+    //   ],
+    //   (err, cr) => {
+    //     if (err) {
+    //       throw new Error("error happened while fetching data, try again");
+    //     } else {
+    //       // Post.populate(
+    //       //   cr,
+    //       //   { path: "owner", select: "username name avatar" },
+    //       //   (err, fp) => {
+    //       //     Post.populate(fp, { path: "commentTo" }, (err, final) => {
+    //       //       Post.populate(
+    //       //         final,
+    //       //         { path: "commentTo.owner", select: "username name avatar" },
+    //       //         (err, ffinal) => {
+    //       //           res.send(final);
+    //       //         }
+    //       //       );
+    //       //     });
+    //       //     // res.send(fp);
+    //       //   }
+    //       // );
+    //       res.send(cr);
+    //     }
+    //   }
+    // );
+    // console.log(ag/g);
     res.send(posts);
   } catch (e) {
     res.status(400).send({ e: e.message });

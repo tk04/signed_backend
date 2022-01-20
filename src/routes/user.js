@@ -223,19 +223,33 @@ router.get("/api1/search/users", async (req, res) => {
 });
 router.get("/api1/related/users", auth, async (req, res) => {
   const skip = parseInt(req.query.skip) || 0;
-  const users = await User.find({
-    keywords: {
-      $in: req.user.keywords,
-    },
-    _id: {
-      $ne: mongoose.Types.ObjectId(req.user._id),
-    },
-  })
-    .sort({ createdAt: 1 })
-    .limit(3)
-    .skip(skip)
-    .where();
+  if (req.user.keywords.length > 0) {
+    const users = await User.find({
+      keywords: {
+        $in: req.user.keywords,
+      },
+      _id: {
+        $ne: mongoose.Types.ObjectId(req.user._id),
+      },
+    })
+      .sort({ createdAt: 1 })
+      .limit(3)
+      .skip(skip)
+      .where();
 
-  res.send(users);
+    res.send(users);
+  } else {
+    const users = await User.find({
+      _id: {
+        $ne: mongoose.Types.ObjectId(req.user._id),
+      },
+    })
+      .sort({ createdAt: 1 })
+      .limit(3)
+      .skip(skip)
+      .where();
+
+    res.send(users);
+  }
 });
 module.exports = router;

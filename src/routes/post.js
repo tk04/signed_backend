@@ -240,7 +240,6 @@ router.get("/api1/feed", auth, async (req, res) => {
 router.get("/api1/popular", async (req, res) => {
   try {
     const skip = parseInt(req.query.skip);
-    console.log(skip);
     const posts = await Post.find({})
       .sort({ likes: -1, createdAt: -1 })
       .skip(skip)

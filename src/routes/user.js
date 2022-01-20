@@ -208,4 +208,17 @@ router.post("/api1/users/:uid/follow", auth, async (req, res) => {
     res.status(404).send({ e: e.message });
   }
 });
+router.get("/api1/search/users", async (req, res) => {
+  const skip = parseInt(req.query.skip) || 0;
+  const users = await User.find({
+    username: {
+      $regex: req.query.keyword,
+      $options: "i",
+    },
+  })
+    .limit(3)
+    .skip(skip);
+
+  res.send(users);
+});
 module.exports = router;

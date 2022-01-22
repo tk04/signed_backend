@@ -8,6 +8,7 @@ const path = require("path");
 const fs = require("fs");
 var mongoose = require("mongoose");
 const { $where } = require("../models/post");
+const User = require("../models/user");
 
 const storage = multer.diskStorage({
   destination(req, file, cb) {
@@ -228,7 +229,7 @@ router.get("/api1/feed", auth, async (req, res) => {
   const skip = parseInt(req.query.skip);
   const posts = await Post.find({
     owner: {
-      $in: req.user.following,
+      $in: [...req.user.following, mongoose.Types.ObjectId(req.user._id)],
     },
   })
     .sort({ createdAt: -1 })
@@ -243,7 +244,7 @@ router.get("/api1/popular", async (req, res) => {
     const posts = await Post.find({})
       .sort({ likes: -1, createdAt: -1 })
       .skip(skip)
-      .limit(3);
+      .limit(4);
     // const agg = Post.aggregate(
     //   [
     //     {
@@ -313,5 +314,33 @@ router.post("/api1/comment/:pid", auth, async (req, res) => {
   } catch (e) {
     res.status(400).send({ e: e.message });
   }
+});
+
+router.get("/api1/noti", auth, async (req, res) => {
+  await req.user.populate({
+    path: "followers",
+    model: "User",
+    select: "username",
+  });
+  const notis = await Post.find(
+    {
+      owner: mongoose.Types.ObjectId(req.user._id),
+    },
+    "comments text likes"
+  )
+    .populate({
+      path: "comments",
+      populate: {
+        path: "owner",
+        model: "User",
+        select: "username",
+      },
+      options: {
+        limit: 5,
+        sort: { createdAt: -1 },
+      },
+    })
+    .sort({ comments: -1 });
+  res.send({ notis, newFollowers: req.user.followers });
 });
 module.exports = router;

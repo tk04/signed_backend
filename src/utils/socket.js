@@ -32,24 +32,36 @@ const auth = async (token, toUser) => {
 let connectCounter;
 io.on("connection", (socket) => {
   console.log(socket.id);
-  // console.log(socket.handshake.auth.token);
-  // if (socket.handshake.auth.token) {
-  //   socket.join(socket.handshake.auth.token);
-  // } else {
-  // socket.join("tk");
-  // }
 
-  socket.on("join", (room) => {
-    socket.join(room);
-
-    io.to(room).emit("test");
+  socket.on("join", async (to) => {
+    const user = await auth(socket.handshake.auth.token, to);
+    if (user) {
+      socket.join(`${user}-${to}`);
+      socket.data.join = `${user}-${to}`;
+      socket.emit("joined");
+      socket.data.room = `${to}-${user}`;
+      const messages = await Message.find().or([
+        { to: socket.data.room.split("-") },
+        { from: socket.data.room.split("-") },
+      ]);
+      socket.emit("loadMessages", messages);
+    } else {
+      socket.emit("failed");
+    }
   });
 
-  socket.on("newMessage", (data) => {
-    console.log("new msg");
-    console.log(counter);
+  socket.on("newMessage", async (data) => {
+    const msg = new Message({
+      body: data,
+      to: Array.from(socket.data.room.split("-")),
+      from: Array.from(socket.data.join.split("-")),
+    });
+    io.to(socket.data.room).emit("message", msg);
+    if (socket.data.room.split("-")[0] !== socket.data.room.split("-")[1]) {
+      io.to(socket.data.join).emit("message", msg);
+    }
+    await msg.save();
   });
-  // io.to("tk").emit("message", "testing");
 
   // socket.on("join", () => {
   //   counter++;

@@ -9,11 +9,11 @@ const jwt = require("jsonwebtoken");
 const Message = require("../models/message");
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://localhost:3001"],
     methods: ["GET", "POST"],
   },
 });
-
+let counter = 0;
 const auth = async (token, toUser) => {
   try {
     const decoded = jwt.verify(token, "testing123123_fzxasszxc");
@@ -29,40 +29,35 @@ const auth = async (token, toUser) => {
     return false;
   }
 };
+let connectCounter;
 io.on("connection", (socket) => {
   console.log(socket.id);
-  // console.log(socket.handshake);
-  // if (socket.handshake.auth.token && socket.handshake.query.toUser) {
-  //   const isAuth = await auth(
-  //     socket.handshake.auth.token,
-  //     socket.handshake.query.toUser
-  //   );
-  //   if (isAuth) {
-  //     socket.emit("authorized");
-  //     socket.data.user = isAuth;
-  //     socket.join(socket.handshake.query.toUser);
-  //     socket.data.room = socket.handshake.query.toUser;
-  //     console.log(socket.handshake.query.toUser);
-  //   }
+  // console.log(socket.handshake.auth.token);
+  // if (socket.handshake.auth.token) {
+  //   socket.join(socket.handshake.auth.token);
+  // } else {
+  // socket.join("tk");
   // }
-  socket.join("tk");
-  // socket.on("join", async (toUser) => {
-  //   const isAuth = await auth(socket.handshake.auth.token, toUser);
-  //   if (isAuth) {
-  //     io.to(socket.id).emit("authorized");
-  //     socket.data.user = isAuth;
-  //     socket.join(toUser);
-  //     socket.data.room = toUser;
-  //   }
-  // });
-  socket.on("newMessage", (data) => {
-    const msg = new Message({ ...data, from: socket.data.user });
-    console.log(msg);
-    io.to("tk").emit("message", msg);
-    // await msg.save();
-    // console.log(socket.data.user);
-    // console.log(msg);
+
+  socket.on("join", (room) => {
+    socket.join(room);
+
+    io.to(room).emit("test");
   });
+
+  socket.on("newMessage", (data) => {
+    console.log("new msg");
+    console.log(counter);
+  });
+  // io.to("tk").emit("message", "testing");
+
+  // socket.on("join", () => {
+  //   counter++;
+  // });
+  // socket.on("disconnect", () => {
+  //   console.log("disconnected");
+  //   counter--;
+  // });
 });
 
 module.exports = {

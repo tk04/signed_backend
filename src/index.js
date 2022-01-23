@@ -10,10 +10,12 @@ const PORT = process.env.PORT || 4000;
 console.log("PORT: " + PORT);
 const userRoutes = require("./routes/user");
 const postRouter = require("./routes/post");
+const msgRouter = require("./routes/messages");
 app.use(express.json());
 app.use(cookieParser());
 
 app.use(userRoutes);
 app.use(postRouter);
+app.use(msgRouter);
 
 server.listen(PORT);

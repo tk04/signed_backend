@@ -21,7 +21,8 @@ const auth = async (token, toUser) => {
     const thereUser = await User.findOne({ username: toUser });
 
     if (user && thereUser) {
-      return user.username;
+      console.log(thereUser._id);
+      return { user: user.username, userProfile: thereUser._id };
     } else {
       return false;
     }
@@ -36,14 +37,28 @@ io.on("connection", (socket) => {
   socket.on("join", async (to) => {
     const user = await auth(socket.handshake.auth.token, to);
     if (user) {
-      socket.join(`${user}-${to}`);
-      socket.data.join = `${user}-${to}`;
+      socket.join(`${user.user}-${to}`);
+      socket.data.join = `${user.user}-${to}`;
+      socket.data.toUser = user.userProfile;
       socket.emit("joined");
-      socket.data.room = `${to}-${user}`;
-      const messages = await Message.find().or([
+      socket.data.room = `${to}-${user.user}`;
+      const messages = await Message.findOne().or([
         { to: socket.data.room.split("-") },
         { from: socket.data.room.split("-") },
       ]);
+      if (messages === null) {
+        const msg = new Message({
+          body: [],
+          to: Array.from(socket.data.room.split("-")),
+          from: Array.from(socket.data.join.split("-")),
+          toUser: socket.data.toUser,
+        });
+        await msg.save();
+        socket.data.messages = msg;
+      } else {
+        socket.data.messages = messages;
+      }
+      console.log(socket.data.messages);
       socket.emit("loadMessages", messages);
     } else {
       socket.emit("failed");
@@ -51,16 +66,31 @@ io.on("connection", (socket) => {
   });
 
   socket.on("newMessage", async (data) => {
-    const msg = new Message({
-      body: data,
-      to: Array.from(socket.data.room.split("-")),
-      from: Array.from(socket.data.join.split("-")),
-    });
+    // const msg = new Message({
+    //   body: data,
+    //   to: Array.from(socket.data.room.split("-")),
+    //   from: Array.from(socket.data.join.split("-")),
+    //   toUser: socket.data.toUser,
+    // });
+    const msg = socket.data.messages;
+    if (msg) {
+      console.log(msg.body);
+      msg.body.push({ body: data, isUser: true });
+      await msg.save();
+      console.log(msg.body);
+      console.log("SAVED");
+    }
+    // if (msg.body) {
+    //   msg.body.concat(data);
+    // } else {
+    //   msg.body = [data];
+    // }
+    socket.data.messages.body.push(data);
     io.to(socket.data.room).emit("message", msg);
     if (socket.data.room.split("-")[0] !== socket.data.room.split("-")[1]) {
       io.to(socket.data.join).emit("message", msg);
     }
-    await msg.save();
+    // await socket.data.messages.save();
   });
 
   // socket.on("join", () => {

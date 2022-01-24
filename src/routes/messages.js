@@ -8,9 +8,14 @@ router.get("/api1/messages", auth, async (req, res) => {
   const messages = await Message.find({
     from: {
       $in: [req.user.username],
-      $ne: [mongoose.Types.ObjectId(req.user._id)],
     },
-  }).distinct("toUser");
+  }).populate({
+    path: "users",
+    model: "User",
+    match: { _id: { $ne: req.user._id } },
+
+    select: "username name avatar",
+  });
 
   res.send(messages);
 });

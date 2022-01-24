@@ -10,8 +10,8 @@ const messageSchema = new mongoose.Schema(
       type: [String],
       required: true,
     },
-    toUser: {
-      type: mongoose.SchemaTypes.ObjectId,
+    users: {
+      type: [mongoose.SchemaTypes.ObjectId],
       ref: "User",
       required: true,
     },

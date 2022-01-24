@@ -21,8 +21,12 @@ const auth = async (token, toUser) => {
     const thereUser = await User.findOne({ username: toUser });
 
     if (user && thereUser) {
-      console.log(thereUser._id);
-      return { user: user.username, userProfile: thereUser._id };
+      if (user.username === thereUser.username) {
+        return false;
+      } else {
+        // console.log(thereUser._id);
+        return { user: user.username, user1: thereUser._id, user2: user._id };
+      }
     } else {
       return false;
     }
@@ -43,24 +47,44 @@ io.on("connection", (socket) => {
       socket.data.toUser = user.userProfile;
       socket.emit("joined");
       socket.data.room = `${to}-${user.user}`;
-      const messages = await Message.findOne().or([
-        { to: socket.data.room.split("-") },
-        { from: socket.data.room.split("-") },
-      ]);
+      const messages = await Message.findOne()
+        .or([
+          { to: socket.data.room.split("-") },
+          { from: socket.data.room.split("-") },
+        ])
+        .populate({
+          path: "users",
+          model: "User",
+          match: { _id: { $ne: user.user2 } },
+
+          select: "username name avatar",
+        });
       if (messages === null) {
         const msg = new Message({
           body: [],
           to: Array.from(socket.data.room.split("-")),
           from: Array.from(socket.data.join.split("-")),
-          toUser: socket.data.toUser,
+          users: [user.user1, user.user2],
         });
         await msg.save();
+        await Message.populate(msg, {
+          path: "users",
+          model: "User",
+          match: { _id: { $ne: user.user2 } },
+
+          select: "username name avatar",
+        });
+        // console.log(realMsg);
+
         socket.data.messages = msg;
+
+        // console.log(popMsg);
       } else {
         socket.data.messages = messages;
       }
-      console.log(socket.data.messages);
-      socket.emit("loadMessages", messages);
+      // console.log(socket.data.messages);
+      socket.emit("userInfo", socket.data.messages.users[0]);
+      socket.emit("loadMessages", socket.data.messages.body);
     } else {
       socket.emit("failed");
     }
@@ -74,24 +98,29 @@ io.on("connection", (socket) => {
     //   toUser: socket.data.toUser,
     // });
     const msg = socket.data.messages;
-    console.log(msg);
+    // console.log(msg);
     if (msg) {
-      console.log(msg.body);
+      // console.log(msg.body);
       msg.body.push({ body: data, isUser: socket.data.user });
       await msg.save();
-      console.log(msg.body);
-      console.log("SAVED");
+      // console.log(msg.body);
+      // console.log("SAVED");
     }
     // if (msg.body) {
     //   msg.body.concat(data);
     // } else {
     //   msg.body = [data];
     // }
-    // socket.data.messages.body.push(data);
-    // io.to(socket.data.room).emit("message", msg);
-    // if (socket.data.room.split("-")[0] !== socket.data.room.split("-")[1]) {
-    //   io.to(socket.data.join).emit("message", msg);
-    // }
+    io.to(socket.data.room).emit("message", {
+      body: data,
+      isUser: socket.data.user,
+    });
+    if (socket.data.room.split("-")[0] !== socket.data.room.split("-")[1]) {
+      io.to(socket.data.join).emit("message", {
+        body: data,
+        isUser: socket.data.user,
+      });
+    }
     // await socket.data.messages.save();
   });
 

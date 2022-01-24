@@ -9,7 +9,7 @@ const jwt = require("jsonwebtoken");
 const Message = require("../models/message");
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: ["http://localhost:3000", "https://signed.vercel.app"],
     methods: ["GET", "POST"],
   },
 });

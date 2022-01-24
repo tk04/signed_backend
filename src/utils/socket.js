@@ -38,6 +38,7 @@ io.on("connection", (socket) => {
     const user = await auth(socket.handshake.auth.token, to);
     if (user) {
       socket.join(`${user.user}-${to}`);
+      socket.data.user = user.user;
       socket.data.join = `${user.user}-${to}`;
       socket.data.toUser = user.userProfile;
       socket.emit("joined");
@@ -73,9 +74,10 @@ io.on("connection", (socket) => {
     //   toUser: socket.data.toUser,
     // });
     const msg = socket.data.messages;
+    console.log(msg);
     if (msg) {
       console.log(msg.body);
-      msg.body.push({ body: data, isUser: true });
+      msg.body.push({ body: data, isUser: socket.data.user });
       await msg.save();
       console.log(msg.body);
       console.log("SAVED");
@@ -85,11 +87,11 @@ io.on("connection", (socket) => {
     // } else {
     //   msg.body = [data];
     // }
-    socket.data.messages.body.push(data);
-    io.to(socket.data.room).emit("message", msg);
-    if (socket.data.room.split("-")[0] !== socket.data.room.split("-")[1]) {
-      io.to(socket.data.join).emit("message", msg);
-    }
+    // socket.data.messages.body.push(data);
+    // io.to(socket.data.room).emit("message", msg);
+    // if (socket.data.room.split("-")[0] !== socket.data.room.split("-")[1]) {
+    //   io.to(socket.data.join).emit("message", msg);
+    // }
     // await socket.data.messages.save();
   });
 

@@ -95,6 +95,7 @@ io.on("connection", (socket) => {
     if (msg) {
       // console.log(msg.body);
       msg.body.push({ body: data, isUser: socket.data.user });
+      console.log(msg.users);
       await msg.save();
       // console.log(msg.body);
       // console.log("SAVED");

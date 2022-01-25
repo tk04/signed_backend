@@ -65,12 +65,13 @@ io.on("connection", (socket) => {
           from: Array.from(socket.data.join.split("-")),
           users: [user.user1, user.user2],
         });
-        console.log("User length: " + [user.user1, user.user2].length);
+        // console.log("User length: ");
+        // console.log(user.user2);
         // await msg.save();
         await Message.populate(msg, {
           path: "users",
           model: "User",
-          match: { _id: { $ne: user.user2 } },
+          // match: { _id: { $ne: user.user2 } },
 
           select: "username name avatar",
         });
@@ -92,11 +93,12 @@ io.on("connection", (socket) => {
 
   socket.on("newMessage", async (data) => {
     const msg = socket.data.messages;
+    // console.log("user length top: " + msg);
     // console.log(msg);
     if (msg) {
-      // console.log(msg.body);
+      // console.log(socket.data);
       msg.body.push({ body: data, isUser: socket.data.user });
-      console.log(msg.users.length);
+      // console.log("user length: " + msg.users.length);
       await msg.save();
       // console.log(msg.body);
       // console.log("SAVED");

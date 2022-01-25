@@ -36,7 +36,7 @@ const auth = async (token, toUser) => {
 };
 let connectCounter;
 io.on("connection", (socket) => {
-  console.log(socket.id);
+  // console.log(socket.id);
 
   socket.on("join", async (to) => {
     const user = await auth(socket.handshake.auth.token, to);
@@ -66,7 +66,7 @@ io.on("connection", (socket) => {
           from: Array.from(socket.data.join.split("-")),
           users: [user.user1, user.user2],
         });
-        await msg.save();
+        // await msg.save();
         await Message.populate(msg, {
           path: "users",
           model: "User",
@@ -91,12 +91,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("newMessage", async (data) => {
-    // const msg = new Message({
-    //   body: data,
-    //   to: Array.from(socket.data.room.split("-")),
-    //   from: Array.from(socket.data.join.split("-")),
-    //   toUser: socket.data.toUser,
-    // });
     const msg = socket.data.messages;
     // console.log(msg);
     if (msg) {
@@ -106,11 +100,7 @@ io.on("connection", (socket) => {
       // console.log(msg.body);
       // console.log("SAVED");
     }
-    // if (msg.body) {
-    //   msg.body.concat(data);
-    // } else {
-    //   msg.body = [data];
-    // }
+
     io.to(socket.data.room).emit("message", {
       body: data,
       isUser: socket.data.user,

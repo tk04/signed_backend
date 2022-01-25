@@ -13,7 +13,6 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
-let counter = 0;
 const auth = async (token, toUser) => {
   try {
     const decoded = jwt.verify(token, "testing123123_fzxasszxc");

@@ -65,6 +65,7 @@ io.on("connection", (socket) => {
           from: Array.from(socket.data.join.split("-")),
           users: [user.user1, user.user2],
         });
+        console.log("User length: " + [user.user1, user.user2].length);
         // await msg.save();
         await Message.populate(msg, {
           path: "users",
@@ -95,7 +96,7 @@ io.on("connection", (socket) => {
     if (msg) {
       // console.log(msg.body);
       msg.body.push({ body: data, isUser: socket.data.user });
-      console.log(msg.users);
+      console.log(msg.users.length);
       await msg.save();
       // console.log(msg.body);
       // console.log("SAVED");

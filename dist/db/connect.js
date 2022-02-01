@@ -1,3 +1,4 @@
 "use strict";
 const mongoose = require("mongoose");
-mongoose.connect("mongodb+srv://tk:Aloufipro1@cluster0.aoxpu.mongodb.net/signed?retryWrites=true&w=majority");
+require("dotenv").config();
+mongoose.connect(process.env.DB_URL);

@@ -5,6 +5,8 @@ const http = require("http");
 const express = require("express");
 const app = express();
 const User = require("../models/user");
+// const mongoose = require("mongoose");
+// import mongoose from "mongoose";
 const server = http.createServer(app);
 const jwt = require("jsonwebtoken");
 const Message = require("../models/message");

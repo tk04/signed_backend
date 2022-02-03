@@ -24,10 +24,12 @@ app.use(msgRouter);
 import client from "./redis/index";
 app.get("/redis", async (req: Request, res: Response) => {
   //   await client.set("tk", JSON.stringify({ tk: "aloufi" }));
-  const redis = await client();
-  await redis.set("tk", "test");
-  const val = await redis.get("tk");
+  await client.set("tk", "test");
+  const val = await client.get("tk");
+  await client.del("tk");
   console.log(val);
+  const val1 = await client.get("tk");
+  console.log(val1);
   res.send("REIDSS");
 });
 server.listen(PORT);

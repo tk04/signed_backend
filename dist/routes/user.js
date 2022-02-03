@@ -14,6 +14,7 @@ const jwt = require("jsonwebtoken");
 const router = express_1.default.Router();
 const cors = require("cors");
 const mongoose = require("mongoose");
+const index_1 = __importDefault(require("../redis/index"));
 const upload = (0, multer_1.default)({
     limits: {
         fileSize: 1000000, // in MB
@@ -61,7 +62,17 @@ router.get("/api1/users/:username", async (req, res) => {
             ? req.headers.authorization.replace("Bearer ", "")
             : null;
         const uid = req.params.username;
-        const user = await User.findOne({ username: uid });
+        let user;
+        const userCached = await index_1.default.get(uid);
+        if (userCached) {
+            user = JSON.parse(userCached);
+            // console.log("redis");
+        }
+        else {
+            user = await User.findOne({ username: uid });
+            index_1.default.set(uid, JSON.stringify(user));
+        }
+        // const user = await User.findOne({ username: uid });
         if (!user) {
             return res.status(404).send({ error: "User not found" });
         }
@@ -94,6 +105,7 @@ router.get("/api1/users/:username", async (req, res) => {
 });
 router.patch("/api1/users/me", auth, async (req, res) => {
     const updates = Object.keys(req.body);
+    index_1.default.del(req.user.username);
     const allowedUpdates = [
         "name",
         "username",
@@ -126,6 +138,7 @@ router.post("/api1/users/me/avatar", auth, upload.single("avatar"), async (req, 
         .toBuffer();
     req.user.avatar = buffer; // multer addes file to req obj if destination not specified in config
     await req.user.save();
+    index_1.default.del(req.user.username);
     res.send();
 }, (err, req, res, next) => {
     // function to run when err happens
@@ -185,6 +198,7 @@ router.post("/api1/users/:uid/follow", auth, async (req, res) => {
     try {
         const uid = mongoose.Types.ObjectId(req.params.uid);
         const user = await User.findOne({ _id: uid });
+        index_1.default.del(req.user.username);
         if (!user) {
             throw new Error("no user found");
         }

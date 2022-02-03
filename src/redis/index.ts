@@ -1,7 +1,10 @@
 // const redis = require("redis");
 import { createClient } from "redis";
 const red = async () => {
-  const client = createClient();
+  const client = createClient({
+    url: process.env.REDIS_URL,
+    password: process.env.REDIS_PASS,
+  });
   await client.connect();
   return client;
   //   await client.set("tk", JSON.stringify({ tk: "test" }));

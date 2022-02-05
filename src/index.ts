@@ -1,5 +1,6 @@
 // const express = require("express");
 import express, { Request, Response } from "express";
+import client from "./redis/index";
 // const cookieParser = require("cookie-parser");
 import cookieParser from "cookie-parser";
 // const app = express();
@@ -21,15 +22,5 @@ app.use(cookieParser());
 app.use(userRoutes);
 app.use(postRouter);
 app.use(msgRouter);
-import client from "./redis/index";
-app.get("/redis", async (req: Request, res: Response) => {
-  //   await client.set("tk", JSON.stringify({ tk: "aloufi" }));
-  await client.set("tk", "test");
-  const val = await client.get("tk");
-  await client.del("tk");
-  console.log(val);
-  const val1 = await client.get("tk");
-  console.log(val1);
-  res.send("REIDSS");
-});
+
 server.listen(PORT);
